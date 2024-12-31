@@ -15,8 +15,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Execute root command with context
-	if err := cmd.ExecuteContext(ctx); err != nil {
+	// Initialize and execute root command
+	rootCmd := cmd.InitCommand()
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		log.Fatal(err)
 	}
 }

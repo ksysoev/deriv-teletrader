@@ -11,26 +11,29 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	debug bool
+// newStartCmd creates and returns the start command
+func newStartCmd(cfg **Config) *cobra.Command {
+	var debug bool
 
-	startCmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the Telegram trading bot",
 		Long: `Start the Telegram trading bot that connects to Deriv API
 and begins processing trading commands from authorized users.`,
-		RunE: runStart,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runStartCmd(cmd.Context(), &(*cfg).Telegram, debug)
+		},
 	}
-)
 
-func init() {
-	startCmd.Flags().BoolVar(&debug, "debug", false, "enable debug mode")
-	rootCmd.AddCommand(startCmd)
+	cmd.Flags().BoolVar(&debug, "debug", false, "enable debug mode")
+
+	return cmd
 }
 
-func runStart(cmd *cobra.Command, args []string) error {
+// runStartCmd handles the start command execution
+func runStartCmd(ctx context.Context, cfg *telegram.Config, debug bool) error {
 	// Create context that will be canceled on interrupt
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Handle interrupt signal
@@ -43,7 +46,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Initialize bot
-	bot, err := telegram.NewBot(&cfg.Telegram)
+	bot, err := telegram.NewBot(cfg)
 	if err != nil {
 		return err
 	}
