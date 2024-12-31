@@ -106,7 +106,20 @@ Environment variables can be used with the prefix `TELETRADER_`, for example:
 
 ## Development
 
-The project uses:
+## Project Structure
+
+```
+.
+├── cmd/            # Command-line interface
+├── config/         # Configuration handling
+├── pkg/           
+│   ├── deriv/     # Deriv API client
+│   └── telegram/  # Telegram bot implementation
+└── config.yaml    # Configuration file
+```
+
+## Technologies
+
 - [Cobra](https://github.com/spf13/cobra) for CLI commands
 - [Viper](https://github.com/spf13/viper) for configuration
 - [telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api) for Telegram integration

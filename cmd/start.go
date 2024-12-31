@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/kirill/deriv-teletrader/internal/telegram"
+	"github.com/kirill/deriv-teletrader/pkg/telegram"
 	"github.com/spf13/cobra"
 )
 
