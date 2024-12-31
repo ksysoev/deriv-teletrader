@@ -44,30 +44,28 @@ The bot can be configured using a YAML file or environment variables. Here's an 
 
 ```yaml
 # Telegram Bot Configuration
-telegram_token: "your_telegram_bot_token"
-allowed_usernames:
-  - "your_telegram_username"
+telegram:
+  token: "your_telegram_bot_token"
+  allowed_usernames:
+    - "your_telegram_username"
+  debug: false
 
 # Deriv API Configuration
-deriv_app_id: "your_deriv_app_id"
-deriv_api_token: "your_deriv_api_token"
-deriv_endpoint: "wss://ws.binaryws.com/websockets/v3"
-
-# Trading Configuration
-default_symbols:
-  - "R_10"
-  - "R_25"
-  - "R_50"
-  - "R_75"
-  - "R_100"
-
-# Debug Mode
-debug: false
+deriv:
+  app_id: "your_deriv_app_id"
+  api_token: "your_deriv_api_token"
+  endpoint: "wss://ws.binaryws.com/websockets/v3"
+  symbols:
+    - "R_10"
+    - "R_25"
+    - "R_50"
+    - "R_75"
+    - "R_100"
 ```
 
 Environment variables can be used with the prefix `TELETRADER_`, for example:
 - `TELETRADER_TELEGRAM_TOKEN`
-- `TELETRADER_ALLOWED_USERNAMES`
+- `TELETRADER_TELEGRAM_ALLOWED_USERNAMES`
 - `TELETRADER_DERIV_APP_ID`
 - etc.
 
@@ -110,13 +108,17 @@ Environment variables can be used with the prefix `TELETRADER_`, for example:
 
 ```
 .
-├── config/         # Configuration handling
 ├── pkg/           
-│   ├── cmd/       # Command-line interface
+│   ├── cmd/       # Command-line interface and configuration handling
 │   ├── deriv/     # Deriv API client
-│   └── telegram/  # Telegram bot implementation
+│   └── telegram/  # Telegram bot implementation with its own config
 └── config.yaml    # Configuration file
 ```
+
+The project follows a modular structure:
+- `pkg/cmd`: Contains CLI commands and configuration handling
+- `pkg/deriv`: Implements the Deriv API client
+- `pkg/telegram`: Implements the Telegram bot with its own configuration structure
 
 ## Technologies
 
