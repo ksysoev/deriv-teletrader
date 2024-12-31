@@ -4,13 +4,12 @@ import (
 	"context"
 	"log"
 
-	"github.com/kirill/deriv-teletrader/config"
 	"github.com/spf13/cobra"
 )
 
 var (
 	cfgFile string
-	cfg     *config.Config
+	cfg     *Config
 	rootCmd = &cobra.Command{
 		Use:   "deriv-teletrader",
 		Short: "A Telegram bot for trading via Deriv API",
@@ -38,7 +37,7 @@ func init() {
 
 func initConfig() {
 	var err error
-	cfg, err = config.InitConfig(cfgFile)
+	cfg, err = InitConfig(cfgFile)
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
