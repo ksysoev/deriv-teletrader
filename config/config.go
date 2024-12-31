@@ -5,21 +5,16 @@ import (
 	"strings"
 
 	"github.com/kirill/deriv-teletrader/pkg/deriv"
+	"github.com/kirill/deriv-teletrader/pkg/telegram"
 	"github.com/spf13/viper"
 )
 
-// Import the deriv package after its Config type is defined
-
 type Config struct {
 	// Telegram settings
-	TelegramToken    string   `mapstructure:"telegram_token"`
-	AllowedUsernames []string `mapstructure:"allowed_usernames"`
+	Telegram telegram.Config `mapstructure:"telegram"`
 
 	// Deriv API settings
 	Deriv deriv.Config `mapstructure:"deriv"`
-
-	// Debug mode
-	Debug bool `mapstructure:"debug"`
 }
 
 // InitConfig initializes the configuration using Viper
@@ -69,11 +64,11 @@ func setDefaults() {
 }
 
 func (c *Config) validate() error {
-	if c.TelegramToken == "" {
-		return fmt.Errorf("telegram_token is required")
+	if c.Telegram.Token == "" {
+		return fmt.Errorf("telegram.token is required")
 	}
-	if len(c.AllowedUsernames) == 0 {
-		return fmt.Errorf("allowed_usernames is required")
+	if len(c.Telegram.AllowedUsernames) == 0 {
+		return fmt.Errorf("telegram.allowed_usernames is required")
 	}
 	if c.Deriv.AppID == "" {
 		return fmt.Errorf("deriv.app_id is required")

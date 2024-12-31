@@ -1,7 +1,9 @@
 # Telegram Bot Configuration
-telegram_token: "your_telegram_bot_token"
-allowed_usernames:
-  - "your_telegram_username"
+telegram:
+  token: "your_telegram_bot_token"
+  allowed_usernames:
+    - "your_telegram_username"
+  debug: false
 
 # Deriv API Configuration
 deriv:
@@ -14,6 +16,3 @@ deriv:
     - "R_50"
     - "R_75"
     - "R_100"
-
-# Debug Mode
-debug: false

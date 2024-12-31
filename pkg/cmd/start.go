@@ -43,7 +43,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Initialize bot
-	bot, err := telegram.NewBot(cfg)
+	bot, err := telegram.NewBot(&cfg.Telegram)
 	if err != nil {
 		return err
 	}

@@ -8,13 +8,20 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/kirill/deriv-teletrader/config"
 	"github.com/kirill/deriv-teletrader/pkg/deriv"
 )
 
+// Config holds configuration specific to the Telegram bot
+type Config struct {
+	Token            string       `mapstructure:"token"`
+	AllowedUsernames []string     `mapstructure:"allowed_usernames"`
+	Debug            bool         `mapstructure:"debug"`
+	Deriv            deriv.Config `mapstructure:"deriv"`
+}
+
 type Bot struct {
 	api             *tgbotapi.BotAPI
-	cfg             *config.Config
+	cfg             *Config
 	derivClient     *deriv.Client
 	allowedUsers    map[string]struct{}
 	updatesChan     tgbotapi.UpdatesChannel
@@ -24,8 +31,8 @@ type Bot struct {
 type CommandHandler func(ctx context.Context, msg *tgbotapi.Message) error
 
 // NewBot creates a new instance of the Telegram bot
-func NewBot(cfg *config.Config) (*Bot, error) {
-	api, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
+func NewBot(cfg *Config) (*Bot, error) {
+	api, err := tgbotapi.NewBotAPI(cfg.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bot: %w", err)
 	}
