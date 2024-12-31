@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/kirill/deriv-teletrader/cmd"
+	"github.com/kirill/deriv-teletrader/pkg/cmd"
 )
 
 func main() {

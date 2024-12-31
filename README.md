@@ -110,9 +110,9 @@ Environment variables can be used with the prefix `TELETRADER_`, for example:
 
 ```
 .
-├── cmd/            # Command-line interface
 ├── config/         # Configuration handling
 ├── pkg/           
+│   ├── cmd/       # Command-line interface
 │   ├── deriv/     # Deriv API client
 │   └── telegram/  # Telegram bot implementation
 └── config.yaml    # Configuration file
