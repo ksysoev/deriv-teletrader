@@ -1,11 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"log"
 
 	"github.com/kirill/deriv-teletrader/config"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -25,6 +25,12 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+// ExecuteContext adds all child commands to the root command and sets flags appropriately
+// with context support for graceful shutdown.
+func ExecuteContext(ctx context.Context) error {
+	return rootCmd.ExecuteContext(ctx)
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./config.yaml)")
@@ -36,7 +42,4 @@ func initConfig() {
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
-
-	// Bind flags to viper
-	viper.BindPFlag("debug", startCmd.Flags().Lookup("debug"))
 }
