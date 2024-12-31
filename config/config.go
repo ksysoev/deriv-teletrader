@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kirill/deriv-teletrader/pkg/deriv"
 	"github.com/spf13/viper"
 )
+
+// Import the deriv package after its Config type is defined
 
 type Config struct {
 	// Telegram settings
@@ -13,10 +16,7 @@ type Config struct {
 	AllowedUsernames []string `mapstructure:"allowed_usernames"`
 
 	// Deriv API settings
-	DerivAppID     string   `mapstructure:"deriv_app_id"`
-	DerivAPIToken  string   `mapstructure:"deriv_api_token"`
-	DerivEndpoint  string   `mapstructure:"deriv_endpoint"`
-	DefaultSymbols []string `mapstructure:"default_symbols"`
+	Deriv deriv.Config `mapstructure:"deriv"`
 
 	// Debug mode
 	Debug bool `mapstructure:"debug"`
@@ -63,8 +63,8 @@ func InitConfig(cfgFile string) (*Config, error) {
 }
 
 func setDefaults() {
-	viper.SetDefault("deriv_endpoint", "wss://ws.binaryws.com/websockets/v3")
-	viper.SetDefault("default_symbols", []string{"R_10", "R_25", "R_50", "R_75", "R_100"})
+	viper.SetDefault("deriv.endpoint", "wss://ws.binaryws.com/websockets/v3")
+	viper.SetDefault("deriv.symbols", []string{"R_10", "R_25", "R_50", "R_75", "R_100"})
 	viper.SetDefault("debug", false)
 }
 
@@ -75,11 +75,11 @@ func (c *Config) validate() error {
 	if len(c.AllowedUsernames) == 0 {
 		return fmt.Errorf("allowed_usernames is required")
 	}
-	if c.DerivAppID == "" {
-		return fmt.Errorf("deriv_app_id is required")
+	if c.Deriv.AppID == "" {
+		return fmt.Errorf("deriv.app_id is required")
 	}
-	if c.DerivAPIToken == "" {
-		return fmt.Errorf("deriv_api_token is required")
+	if c.Deriv.APIToken == "" {
+		return fmt.Errorf("deriv.api_token is required")
 	}
 	return nil
 }

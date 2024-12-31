@@ -33,7 +33,7 @@ func NewBot(cfg *config.Config) (*Bot, error) {
 	api.Debug = cfg.Debug
 
 	// Initialize Deriv client
-	derivClient, err := deriv.NewClient(cfg)
+	derivClient, err := deriv.NewClient(&cfg.Deriv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Deriv client: %w", err)
 	}
@@ -172,7 +172,7 @@ func (b *Bot) handleHelp(ctx context.Context, msg *tgbotapi.Message) error {
 }
 
 func (b *Bot) handleSymbols(ctx context.Context, msg *tgbotapi.Message) error {
-	symbols := strings.Join(b.cfg.DefaultSymbols, "\n")
+	symbols := strings.Join(b.cfg.Deriv.Symbols, "\n")
 	text := fmt.Sprintf("Available symbols:\n\n%s", symbols)
 	return b.reply(msg, text)
 }

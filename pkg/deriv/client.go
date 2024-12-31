@@ -5,24 +5,31 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kirill/deriv-teletrader/config"
 	deriv "github.com/ksysoev/deriv-api"
 )
 
+// Config holds Deriv-specific configuration
+type Config struct {
+	AppID    string   `mapstructure:"app_id"`
+	APIToken string   `mapstructure:"api_token"`
+	Endpoint string   `mapstructure:"endpoint"`
+	Symbols  []string `mapstructure:"symbols"`
+}
+
 type Client struct {
 	api *deriv.Client
-	cfg *config.Config
+	cfg *Config
 }
 
 // NewClient creates a new Deriv API client
-func NewClient(cfg *config.Config) (*Client, error) {
-	appID, err := strconv.Atoi(cfg.DerivAppID)
+func NewClient(cfg *Config) (*Client, error) {
+	appID, err := strconv.Atoi(cfg.AppID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid app ID: %w", err)
 	}
 
 	api, err := deriv.NewDerivAPI(
-		cfg.DerivEndpoint,
+		cfg.Endpoint,
 		appID,
 		"en",
 		"https://deriv-teletrader",

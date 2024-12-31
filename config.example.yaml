@@ -4,17 +4,16 @@ allowed_usernames:
   - "your_telegram_username"
 
 # Deriv API Configuration
-deriv_app_id: "your_deriv_app_id"
-deriv_api_token: "your_deriv_api_token"
-deriv_endpoint: "wss://ws.binaryws.com/websockets/v3"
-
-# Trading Configuration
-default_symbols:
-  - "R_10"
-  - "R_25"
-  - "R_50"
-  - "R_75"
-  - "R_100"
+deriv:
+  app_id: "your_deriv_app_id"
+  api_token: "your_deriv_api_token"
+  endpoint: "wss://ws.binaryws.com/websockets/v3"
+  symbols:
+    - "R_10"
+    - "R_25"
+    - "R_50"
+    - "R_75"
+    - "R_100"
 
 # Debug Mode
 debug: false
