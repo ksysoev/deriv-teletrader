@@ -86,81 +86,59 @@ func (c *Client) GetBalance(ctx context.Context) (*core.BalanceInfo, error) {
 
 // GetPrice retrieves current price for a symbol
 func (c *Client) GetPrice(ctx context.Context, symbol string) (float64, error) {
-	var tickReq struct {
-		Ticks     string `json:"ticks"`
-		Subscribe int    `json:"subscribe"`
-		ReqID     int    `json:"req_id"`
-	}
-	tickReq.Ticks = symbol
-	tickReq.Subscribe = 0
-	tickReq.ReqID = 2
-
-	var tickResp struct {
-		Tick struct {
-			Quote float64 `json:"quote"`
-		} `json:"tick"`
+	req := schema.Ticks{
+		Ticks: symbol,
 	}
 
-	if err := c.api.SendRequest(ctx, 2, tickReq, &tickResp); err != nil {
+	resp, err := c.api.Ticks(ctx, req)
+	if err != nil {
 		return 0, fmt.Errorf("failed to get price: %w", err)
 	}
 
-	return tickResp.Tick.Quote, nil
+	if resp.Tick.Quote == nil {
+		return 0, fmt.Errorf("no quote available")
+	}
+	return *resp.Tick.Quote, nil
 }
 
 // PlaceTrade places a trade order
 func (c *Client) PlaceTrade(ctx context.Context, symbol string, amount float64, direction string) error {
-	// First create a proposal
-	var proposalReq struct {
-		Proposal     int    `json:"proposal"`
-		ContractType string `json:"contract_type"`
-		Symbol       string `json:"symbol"`
-		Duration     int    `json:"duration"`
-		DurationUnit string `json:"duration_unit"`
-		Basis        string `json:"basis"`
-		Amount       string `json:"amount"`
-		Currency     string `json:"currency"`
-		ReqID        int    `json:"req_id"`
+	// Create a proposal
+	duration := 5
+	basis := schema.ProposalBasisStake
+
+	// Convert direction string to ProposalContractType
+	var contractType schema.ProposalContractType
+	if direction == "CALL" {
+		contractType = schema.ProposalContractTypeCALL
+	} else {
+		contractType = schema.ProposalContractTypePUT
 	}
 
-	proposalReq.Proposal = 1
-	proposalReq.ContractType = direction
-	proposalReq.Symbol = symbol
-	proposalReq.Duration = 60
-	proposalReq.DurationUnit = "s"
-	proposalReq.Basis = "stake"
-	proposalReq.Amount = strconv.FormatFloat(amount, 'f', 2, 64)
-	proposalReq.Currency = "USD"
-	proposalReq.ReqID = 3
-
-	var proposalResp struct {
-		Proposal struct {
-			ID string `json:"id"`
-		} `json:"proposal"`
+	req := schema.Proposal{
+		Proposal:     1,
+		Amount:       &amount,
+		Basis:        &basis,
+		ContractType: contractType,
+		Currency:     "USD",
+		Duration:     &duration,
+		DurationUnit: "t",
+		Symbol:       symbol,
 	}
 
-	if err := c.api.SendRequest(ctx, 3, proposalReq, &proposalResp); err != nil {
+	resp, err := c.api.Proposal(ctx, req)
+	if err != nil {
 		return fmt.Errorf("failed to create proposal: %w", err)
 	}
 
-	// Then buy the contract
-	var buyReq struct {
-		Buy   string  `json:"buy"`
-		Price float64 `json:"price"`
-		ReqID int     `json:"req_id"`
+	// Buy the contract
+	buyReq := schema.Buy{
+		Buy:   resp.Proposal.Id,
+		Price: amount,
 	}
 
-	buyReq.Buy = proposalResp.Proposal.ID
-	buyReq.Price = amount
-	buyReq.ReqID = 4
-
-	var buyResp struct {
-		BuyContract struct {
-			ContractID int `json:"contract_id"`
-		} `json:"buy"`
-	}
-
-	if err := c.api.SendRequest(ctx, 4, buyReq, &buyResp); err != nil {
+	_, err = c.api.Buy(ctx, buyReq)
+	if err != nil {
 		return fmt.Errorf("failed to buy contract: %w", err)
 	}
 
@@ -169,44 +147,26 @@ func (c *Client) PlaceTrade(ctx context.Context, symbol string, amount float64, 
 
 // GetPosition retrieves current trading position
 func (c *Client) GetPosition(ctx context.Context) (string, error) {
-	var req struct {
-		ProposalOpenContract int `json:"proposal_open_contract"`
-		Subscribe            int `json:"subscribe"`
-		ReqID                int `json:"req_id"`
-	}
-	req.ProposalOpenContract = 1
-	req.Subscribe = 0
-	req.ReqID = 5
-
-	var resp struct {
-		ProposalOpenContract []struct {
-			ContractID   string  `json:"contract_id"`
-			Symbol       string  `json:"symbol"`
-			ContractType string  `json:"contract_type"`
-			EntrySpot    float64 `json:"entry_spot"`
-			CurrentSpot  float64 `json:"current_spot"`
-			Profit       float64 `json:"profit"`
-		} `json:"proposal_open_contract"`
+	req := schema.ProposalOpenContract{
+		ProposalOpenContract: 1,
 	}
 
-	if err := c.api.SendRequest(ctx, 5, req, &resp); err != nil {
+	resp, err := c.api.ProposalOpenContract(ctx, req)
+	if err != nil {
 		return "", fmt.Errorf("failed to get position: %w", err)
 	}
 
-	if len(resp.ProposalOpenContract) == 0 {
+	if resp.ProposalOpenContract == nil {
 		return "No open positions", nil
 	}
 
 	var result string
-	for _, contract := range resp.ProposalOpenContract {
-		result += fmt.Sprintf("Contract ID: %s\nSymbol: %s\nType: %s\nEntry Spot: %.2f\nCurrent Spot: %.2f\nProfit: %.2f\n\n",
-			contract.ContractID,
-			contract.Symbol,
-			contract.ContractType,
-			contract.EntrySpot,
-			contract.CurrentSpot,
-			contract.Profit)
-	}
+	result += fmt.Sprintf("Contract ID: %s\nType: %s\nEntry Spot: %.2f\nCurrent Spot: %.2f\nProfit: %.2f\n\n",
+		resp.ProposalOpenContract.ContractId,
+		resp.ProposalOpenContract.ContractType,
+		*resp.ProposalOpenContract.EntrySpot,
+		*resp.ProposalOpenContract.CurrentSpot,
+		*resp.ProposalOpenContract.Profit)
 
 	return result, nil
 }
