@@ -70,6 +70,11 @@ func (c *Client) Close() error {
 	return nil
 }
 
+// GetAvailableSymbols returns a list of available trading symbols
+func (c *Client) GetAvailableSymbols(ctx context.Context) ([]string, error) {
+	return c.cfg.Symbols, nil
+}
+
 // GetBalance retrieves account balance
 func (c *Client) GetBalance(ctx context.Context) (*core.BalanceInfo, error) {
 	req := schema.Balance{Balance: 1}

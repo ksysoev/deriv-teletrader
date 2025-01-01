@@ -1,5 +1,19 @@
 package core
 
+import (
+	"context"
+)
+
+// MarketDataProvider defines the interface for fetching market data from different sources
+type MarketDataProvider interface {
+	// GetHistoricalData retrieves historical market data for a given symbol and time period
+	GetHistoricalData(ctx context.Context, req HistoricalDataRequest) ([]HistoricalDataPoint, error)
+	// GetPrice retrieves current price for a symbol
+	GetPrice(ctx context.Context, symbol string) (float64, error)
+	// GetAvailableSymbols returns a list of available trading symbols
+	GetAvailableSymbols(ctx context.Context) ([]string, error)
+}
+
 // TimeInterval represents different time intervals for historical data
 type TimeInterval string
 

@@ -14,8 +14,8 @@ type BalanceInfo struct {
 
 // DerivClient defines the interface for Deriv API operations
 type DerivClient interface {
+	MarketDataProvider
 	GetBalance(ctx context.Context) (*BalanceInfo, error)
-	GetPrice(ctx context.Context, symbol string) (float64, error)
 	PlaceTrade(ctx context.Context, symbol string, amount float64, direction string) error
 	GetPosition(ctx context.Context) (string, error)
 }
@@ -101,8 +101,8 @@ func (b *Bot) ProcessMessage(ctx context.Context, msg *Message) (*Response, erro
 			}, nil
 		}
 
-		// Process text with LLM
-		response, err := b.llmClient.ProcessText(ctx, text)
+		// Process text with LLM using market data functions
+		response, err := b.llmClient.ProcessWithFunctions(ctx, text, b.derivClient, MarketDataFunctions)
 		if err != nil {
 			return nil, fmt.Errorf("failed to process text: %w", err)
 		}
