@@ -59,9 +59,17 @@ type LLMFunction struct {
 
 // LLMFunctionCall represents a function call request from the LLM
 type LLMFunctionCall struct {
-	Name      string                 `json:"name"`
+	Name      string                 `json:"name"` // Changed from "function" to "name" to match Claude's format
 	Arguments map[string]interface{} `json:"arguments"`
 }
+
+// Example function call JSON:
+// {
+//   "name": "get_price",
+//   "arguments": {
+//     "symbol": "R_50"
+//   }
+// }
 
 // LLMClient defines the interface for LLM operations
 type LLMClient interface {
