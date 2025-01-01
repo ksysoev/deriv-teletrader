@@ -110,14 +110,18 @@ Environment variables can be used with the prefix `TELETRADER_`, for example:
 .
 ├── pkg/           
 │   ├── cmd/       # Command-line interface and configuration handling
-│   ├── deriv/     # Deriv API client
+│   ├── core/      # Core business logic and message processing
+│   ├── prov/      # External service providers
+│   │   └── deriv/ # Deriv API client implementation
 │   └── telegram/  # Telegram bot implementation with its own config
 └── config.yaml    # Configuration file
 ```
 
 The project follows a modular structure:
-- `pkg/cmd`: Contains CLI commands and configuration handling
-- `pkg/deriv`: Implements the Deriv API client
+- `pkg/cmd`: Contains CLI commands, configuration handling, and manages service lifecycles
+- `pkg/core`: Implements core business logic and message processing in a stateless manner
+- `pkg/prov`: Contains external service provider implementations
+  - `pkg/prov/deriv`: Implements the Deriv API client
 - `pkg/telegram`: Implements the Telegram bot with its own configuration structure
 
 ## Technologies
