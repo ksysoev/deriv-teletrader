@@ -10,6 +10,13 @@ import (
 	"github.com/kirill/deriv-teletrader/pkg/core"
 )
 
+// MessageProcessor defines the interface for processing chat messages
+type MessageProcessor interface {
+	ProcessMessage(ctx context.Context, msg *core.Message) (*core.Response, error)
+	Connect(ctx context.Context) error
+	Close() error
+}
+
 // Config holds configuration specific to the Telegram bot
 type Config struct {
 	Token            string   `mapstructure:"token"`
@@ -18,12 +25,12 @@ type Config struct {
 }
 
 type Bot struct {
-	api     *tgbotapi.BotAPI
-	coreBot *core.Bot
+	api       *tgbotapi.BotAPI
+	processor MessageProcessor
 }
 
 // NewBot creates a new instance of the Telegram bot
-func NewBot(cfg *Config, coreBot *core.Bot) (*Bot, error) {
+func NewBot(cfg *Config, processor MessageProcessor) (*Bot, error) {
 	api, err := tgbotapi.NewBotAPI(cfg.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bot: %w", err)
@@ -32,8 +39,8 @@ func NewBot(cfg *Config, coreBot *core.Bot) (*Bot, error) {
 	api.Debug = cfg.Debug
 
 	bot := &Bot{
-		api:     api,
-		coreBot: coreBot,
+		api:       api,
+		processor: processor,
 	}
 
 	return bot, nil
@@ -84,8 +91,8 @@ func (b *Bot) handleUpdate(ctx context.Context, update tgbotapi.Update) error {
 		coreMsg.Args = strings.Fields(msg.CommandArguments())
 	}
 
-	// Process message using core bot
-	response, err := b.coreBot.ProcessMessage(ctx, coreMsg)
+	// Process message using message processor
+	response, err := b.processor.ProcessMessage(ctx, coreMsg)
 	if err != nil {
 		return fmt.Errorf("failed to process message: %w", err)
 	}
