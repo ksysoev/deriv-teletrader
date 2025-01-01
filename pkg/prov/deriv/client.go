@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	deriv "github.com/ksysoev/deriv-api"
+	"github.com/ksysoev/deriv-api/schema"
 )
 
 // Config holds Deriv-specific configuration
@@ -45,9 +46,20 @@ func NewClient(cfg *Config) (*Client, error) {
 	}, nil
 }
 
-// Connect establishes connection to Deriv API
+// Connect establishes connection to Deriv API and authorizes the session
 func (c *Client) Connect(ctx context.Context) error {
-	return c.api.Connect()
+	if err := c.api.Connect(); err != nil {
+		return fmt.Errorf("failed to connect: %w", err)
+	}
+
+	// Authorize the connection
+	reqAuth := schema.Authorize{Authorize: c.cfg.APIToken}
+	if _, err := c.api.Authorize(ctx, reqAuth); err != nil {
+		c.api.Disconnect()
+		return fmt.Errorf("failed to authorize: %w", err)
+	}
+
+	return nil
 }
 
 // Close closes the connection
