@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kirill/deriv-teletrader/pkg/deriv"
+	"github.com/kirill/deriv-teletrader/pkg/prov/deriv"
 	"github.com/kirill/deriv-teletrader/pkg/telegram"
 	"github.com/spf13/viper"
 )
