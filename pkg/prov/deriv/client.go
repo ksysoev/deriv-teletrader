@@ -161,9 +161,9 @@ func (c *Client) GetPosition(ctx context.Context) (string, error) {
 	}
 
 	var result string
-	result += fmt.Sprintf("Contract ID: %s\nType: %s\nEntry Spot: %.2f\nCurrent Spot: %.2f\nProfit: %.2f\n\n",
-		resp.ProposalOpenContract.ContractId,
-		resp.ProposalOpenContract.ContractType,
+	result += fmt.Sprintf("Contract ID: %d\nType: %s\nEntry Spot: %.2f\nCurrent Spot: %.2f\nProfit: %.2f\n\n",
+		*resp.ProposalOpenContract.ContractId,
+		*resp.ProposalOpenContract.ContractType,
 		*resp.ProposalOpenContract.EntrySpot,
 		*resp.ProposalOpenContract.CurrentSpot,
 		*resp.ProposalOpenContract.Profit)
