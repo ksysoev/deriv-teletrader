@@ -10,6 +10,7 @@ import (
 
 	"github.com/kirill/deriv-teletrader/pkg/core"
 	"github.com/kirill/deriv-teletrader/pkg/prov/deriv"
+	"github.com/kirill/deriv-teletrader/pkg/prov/llm"
 	"github.com/kirill/deriv-teletrader/pkg/telegram"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,7 @@ func newStartCmd(cfg **Config) *cobra.Command {
 		Long: `Start the Telegram trading bot that connects to Deriv API
 and begins processing trading commands from authorized users.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStartCmd(cmd.Context(), &(*cfg).Telegram, &(*cfg).Deriv, debug)
+			return runStartCmd(cmd.Context(), *cfg, debug)
 		},
 	}
 
@@ -34,7 +35,7 @@ and begins processing trading commands from authorized users.`,
 }
 
 // runStartCmd handles the start command execution
-func runStartCmd(ctx context.Context, telegramCfg *telegram.Config, derivCfg *deriv.Config, debug bool) error {
+func runStartCmd(ctx context.Context, cfg *Config, debug bool) error {
 	// Create context that will be canceled on interrupt
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -49,13 +50,19 @@ func runStartCmd(ctx context.Context, telegramCfg *telegram.Config, derivCfg *de
 	}()
 
 	// Initialize Deriv client
-	derivClient, err := deriv.NewClient(derivCfg)
+	derivClient, err := deriv.NewClient(&cfg.Deriv)
 	if err != nil {
 		return fmt.Errorf("failed to create Deriv client: %w", err)
 	}
 
+	// Initialize LLM client
+	llmClient, err := llm.NewClient(&cfg.LLM)
+	if err != nil {
+		return fmt.Errorf("failed to create LLM client: %w", err)
+	}
+
 	// Initialize core bot
-	coreBot, err := core.NewBot(derivClient, telegramCfg.AllowedUsernames, derivCfg.Symbols)
+	coreBot, err := core.NewBot(derivClient, llmClient, cfg.Telegram.AllowedUsernames, cfg.Deriv.Symbols)
 	if err != nil {
 		return err
 	}
@@ -67,7 +74,7 @@ func runStartCmd(ctx context.Context, telegramCfg *telegram.Config, derivCfg *de
 	defer derivClient.Close()
 
 	// Initialize telegram bot
-	bot, err := telegram.NewBot(telegramCfg, coreBot)
+	bot, err := telegram.NewBot(&cfg.Telegram, coreBot)
 	if err != nil {
 		return err
 	}

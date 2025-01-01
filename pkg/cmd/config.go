@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kirill/deriv-teletrader/pkg/prov/deriv"
+	"github.com/kirill/deriv-teletrader/pkg/prov/llm"
 	"github.com/kirill/deriv-teletrader/pkg/telegram"
 	"github.com/spf13/viper"
 )
@@ -15,6 +16,9 @@ type Config struct {
 
 	// Deriv API settings
 	Deriv deriv.Config `mapstructure:"deriv"`
+
+	// LLM settings
+	LLM llm.Config `mapstructure:"llm"`
 }
 
 // InitConfig initializes the configuration using Viper
@@ -75,6 +79,9 @@ func (c *Config) validate() error {
 	}
 	if c.Deriv.APIToken == "" {
 		return fmt.Errorf("deriv.api_token is required")
+	}
+	if c.LLM.APIKey == "" {
+		return fmt.Errorf("llm.api_key is required")
 	}
 	return nil
 }

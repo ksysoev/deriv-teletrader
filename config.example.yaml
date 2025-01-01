@@ -16,3 +16,8 @@ deriv:
     - "R_50"
     - "R_75"
     - "R_100"
+
+# LLM Configuration
+llm:
+  api_key: "your_anthropic_api_key"
+  model: "claude-2" # Optional, defaults to claude-2

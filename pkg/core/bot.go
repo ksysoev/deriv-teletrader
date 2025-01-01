@@ -2,7 +2,14 @@ package core
 
 import (
 	"context"
+	"fmt"
+	"strings"
 )
+
+// LLMClient defines the interface for LLM operations
+type LLMClient interface {
+	ProcessText(ctx context.Context, input string) (string, error)
+}
 
 // BalanceInfo contains balance amount and currency
 type BalanceInfo struct {
@@ -37,6 +44,7 @@ type Response struct {
 // Bot handles the business logic for processing chat messages
 type Bot struct {
 	derivClient     DerivClient
+	llmClient       LLMClient
 	allowedUsers    map[string]struct{}
 	commandHandlers map[string]CommandHandler
 	symbols         []string
@@ -45,7 +53,7 @@ type Bot struct {
 type CommandHandler func(ctx context.Context, msg *Message) (*Response, error)
 
 // NewBot creates a new instance of the bot
-func NewBot(derivClient DerivClient, allowedUsers []string, symbols []string) (*Bot, error) {
+func NewBot(derivClient DerivClient, llmClient LLMClient, allowedUsers []string, symbols []string) (*Bot, error) {
 
 	// Create allowed users map for faster lookup
 	allowedUsersMap := make(map[string]struct{})
@@ -55,6 +63,7 @@ func NewBot(derivClient DerivClient, allowedUsers []string, symbols []string) (*
 
 	bot := &Bot{
 		derivClient:  derivClient,
+		llmClient:    llmClient,
 		allowedUsers: allowedUsersMap,
 		symbols:      symbols,
 	}
@@ -80,6 +89,30 @@ func (b *Bot) ProcessMessage(ctx context.Context, msg *Message) (*Response, erro
 	if !b.isUserAllowed(msg.Username) {
 		return &Response{
 			Text:             "⚠️ You are not authorized to use this bot.",
+			ReplyToMessageID: msg.MessageID,
+			ChatID:           msg.ChatID,
+		}, nil
+	}
+
+	// If it's not a command (doesn't start with /), process as free-form text
+	if msg.Command == "" {
+		// Join all args as they represent the full message text
+		text := msg.Command
+		if len(msg.Args) > 0 {
+			if text != "" {
+				text += " "
+			}
+			text += strings.Join(msg.Args, " ")
+		}
+
+		// Process text with LLM
+		response, err := b.llmClient.ProcessText(ctx, text)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process text: %w", err)
+		}
+
+		return &Response{
+			Text:             response,
 			ReplyToMessageID: msg.MessageID,
 			ChatID:           msg.ChatID,
 		}, nil
