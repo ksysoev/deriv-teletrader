@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/kirill/deriv-teletrader/pkg/core"
 	deriv "github.com/ksysoev/deriv-api"
@@ -143,6 +144,91 @@ func (c *Client) PlaceTrade(ctx context.Context, symbol string, amount float64, 
 	}
 
 	return nil
+}
+
+// convertDataStyle converts core.DataStyle to schema.TicksHistoryStyle
+func convertDataStyle(style core.DataStyle) schema.TicksHistoryStyle {
+	switch style {
+	case core.StyleCandles:
+		return schema.TicksHistoryStyleCandles
+	default:
+		return schema.TicksHistoryStyleTicks
+	}
+}
+
+// GetHistoricalData retrieves historical market data for a given symbol and time period
+func (c *Client) GetHistoricalData(ctx context.Context, req core.HistoricalDataRequest) ([]core.HistoricalDataPoint, error) {
+	// Calculate start time based on interval
+	now := time.Now().Unix()
+	startTime := int(now)
+
+	switch req.Interval {
+	case core.IntervalHour:
+		startTime -= 3600 // 1 hour ago
+	case core.IntervalDay:
+		startTime -= 86400 // 24 hours ago
+	case core.IntervalWeek:
+		startTime -= 604800 // 7 days ago
+	case core.IntervalMonth:
+		startTime -= 2592000 // 30 days ago
+	default:
+		return nil, fmt.Errorf("invalid interval: %s", req.Interval)
+	}
+
+	granularity := schema.TicksHistoryGranularity(60) // 1 minute candles by default
+	style := convertDataStyle(req.Style)
+
+	// Prepare the tick history request
+	historyReq := schema.TicksHistory{
+		TicksHistory: req.Symbol,
+		End:          "latest",   // Always get data up to current time
+		Start:        &startTime, // Pass pointer to integer
+		Style:        style,
+		Count:        req.Count,
+		Granularity:  &granularity,
+	}
+
+	resp, err := c.api.TicksHistory(ctx, historyReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get historical data: %w", err)
+	}
+
+	var result []core.HistoricalDataPoint
+
+	if style == schema.TicksHistoryStyleTicks && resp.History != nil && resp.History.Prices != nil {
+		for i, timestamp := range resp.History.Times {
+			if i < len(resp.History.Prices) {
+				result = append(result, core.HistoricalDataPoint{
+					Timestamp: int64(timestamp),
+					Price:     resp.History.Prices[i],
+				})
+			}
+		}
+	} else if style == schema.TicksHistoryStyleCandles && resp.Candles != nil {
+		for _, candle := range resp.Candles {
+			if candle.Epoch != nil && candle.Close != nil {
+				point := core.HistoricalDataPoint{
+					Timestamp: int64(*candle.Epoch),
+					Price:     *candle.Close,
+					Close:     *candle.Close,
+				}
+
+				if candle.Open != nil {
+					point.Open = *candle.Open
+				}
+				if candle.High != nil {
+					point.High = *candle.High
+				}
+				if candle.Low != nil {
+					point.Low = *candle.Low
+				}
+
+				result = append(result, point)
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // GetPosition retrieves current trading position
