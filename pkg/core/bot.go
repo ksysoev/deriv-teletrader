@@ -22,11 +22,42 @@ type DerivClient interface {
 
 // Message represents a chat message with parsed command and arguments
 type Message struct {
-	Command   string
-	Args      []string
-	ChatID    int64
-	MessageID int
-	Username  string
+	Command      string
+	Args         []string
+	ChatID       int64
+	MessageID    int
+	Username     string
+	CallbackData string // For callback queries from inline buttons
+}
+
+// TradeState represents the state of a trade operation
+type TradeState struct {
+	Symbol string
+	Amount float64
+}
+
+// ParseCallbackData parses callback data in format "action:param1:param2"
+func ParseCallbackData(data string) map[string]string {
+	parts := strings.Split(data, ":")
+	result := make(map[string]string)
+
+	if len(parts) >= 1 {
+		result["action"] = parts[0]
+	}
+	if len(parts) >= 2 {
+		result["symbol"] = parts[1]
+	}
+	if len(parts) >= 3 {
+		result["amount"] = parts[2]
+	}
+
+	return result
+}
+
+// Button represents a keyboard button
+type Button struct {
+	Text         string
+	CallbackData string
 }
 
 // Response represents a response to a chat message
@@ -34,6 +65,7 @@ type Response struct {
 	Text             string
 	ReplyToMessageID int
 	ChatID           int64
+	Buttons          [][]Button // Keyboard buttons in a grid layout
 }
 
 // Bot handles the business logic for processing chat messages
@@ -71,7 +103,6 @@ func NewBot(derivClient DerivClient, llmClient LLMClient, allowedUsers []string,
 		"balance":  bot.handleBalance,
 		"price":    bot.handlePrice,
 		"buy":      bot.handleBuy,
-		"sell":     bot.handleSell,
 		"position": bot.handlePosition,
 	}
 
@@ -89,42 +120,49 @@ func (b *Bot) ProcessMessage(ctx context.Context, msg *Message) (*Response, erro
 		}, nil
 	}
 
-	// If it's not a command (doesn't start with /), process as free-form text
-	if msg.Command == "" {
-		// Join all args as they represent the full message text
-		text := strings.Join(msg.Args, " ")
-		if text == "" {
+	// Handle callback queries (button clicks)
+	if msg.CallbackData != "" {
+		data := ParseCallbackData(msg.CallbackData)
+		if data["action"] == "trade" {
+			msg.Command = "buy" // Treat trade callbacks as buy commands
+		}
+	}
+
+	// If it's a command or callback, handle it
+	if msg.Command != "" {
+		handler, exists := b.commandHandlers[msg.Command]
+		if !exists {
 			return &Response{
-				Text:             "❌ Please provide some text for me to process.",
+				Text:             "❌ Unknown command. Type /help for available commands.",
 				ReplyToMessageID: msg.MessageID,
 				ChatID:           msg.ChatID,
 			}, nil
 		}
+		return handler(ctx, msg)
+	}
 
-		// Process text with LLM using market data functions
-		response, err := b.llmClient.ProcessWithFunctions(ctx, text, b.derivClient, MarketDataFunctions)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process text: %w", err)
-		}
-
+	// Handle free-form text
+	text := strings.Join(msg.Args, " ")
+	if text == "" {
 		return &Response{
-			Text:             response,
+			Text:             "❌ Please provide some text for me to process.",
 			ReplyToMessageID: msg.MessageID,
 			ChatID:           msg.ChatID,
 		}, nil
 	}
 
-	// Handle command
-	handler, exists := b.commandHandlers[msg.Command]
-	if !exists {
-		return &Response{
-			Text:             "❌ Unknown command. Type /help for available commands.",
-			ReplyToMessageID: msg.MessageID,
-			ChatID:           msg.ChatID,
-		}, nil
+	// Process text with LLM using market data functions
+	response, err := b.llmClient.ProcessWithFunctions(ctx, text, b.derivClient, MarketDataFunctions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process text: %w", err)
 	}
 
-	return handler(ctx, msg)
+	return &Response{
+		Text:             response,
+		ReplyToMessageID: msg.MessageID,
+		ChatID:           msg.ChatID,
+	}, nil
+
 }
 
 // isUserAllowed checks if a user is allowed to use the bot
