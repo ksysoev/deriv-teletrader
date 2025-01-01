@@ -61,10 +61,10 @@ func runStartCmd(ctx context.Context, telegramCfg *telegram.Config, derivCfg *de
 	}
 
 	// Connect to Deriv API
-	if err := coreBot.Connect(ctx); err != nil {
+	if err := derivClient.Connect(ctx); err != nil {
 		return err
 	}
-	defer coreBot.Close()
+	defer derivClient.Close()
 
 	// Initialize telegram bot
 	bot, err := telegram.NewBot(telegramCfg, coreBot)

@@ -6,8 +6,6 @@ import (
 
 // DerivClient defines the interface for Deriv API operations
 type DerivClient interface {
-	Connect(ctx context.Context) error
-	Close() error
 	GetBalance(ctx context.Context) (float64, error)
 	GetPrice(ctx context.Context, symbol string) (float64, error)
 	PlaceTrade(ctx context.Context, symbol string, amount float64, direction string) error
@@ -101,14 +99,4 @@ func (b *Bot) isUserAllowed(username string) bool {
 	}
 	_, allowed := b.allowedUsers[username]
 	return allowed
-}
-
-// Connect connects to the Deriv API
-func (b *Bot) Connect(ctx context.Context) error {
-	return b.derivClient.Connect(ctx)
-}
-
-// Close closes the connection to the Deriv API
-func (b *Bot) Close() error {
-	return b.derivClient.Close()
 }

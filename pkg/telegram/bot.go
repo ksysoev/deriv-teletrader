@@ -13,8 +13,6 @@ import (
 // MessageProcessor defines the interface for processing chat messages
 type MessageProcessor interface {
 	ProcessMessage(ctx context.Context, msg *core.Message) (*core.Response, error)
-	Connect(ctx context.Context) error
-	Close() error
 }
 
 // Config holds configuration specific to the Telegram bot
