@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/kirill/deriv-teletrader/pkg/core"
+	"github.com/kirill/deriv-teletrader/pkg/deriv"
 	"github.com/kirill/deriv-teletrader/pkg/telegram"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +23,7 @@ func newStartCmd(cfg **Config) *cobra.Command {
 		Long: `Start the Telegram trading bot that connects to Deriv API
 and begins processing trading commands from authorized users.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStartCmd(cmd.Context(), &(*cfg).Telegram, debug)
+			return runStartCmd(cmd.Context(), &(*cfg).Telegram, &(*cfg).Deriv, debug)
 		},
 	}
 
@@ -31,7 +33,7 @@ and begins processing trading commands from authorized users.`,
 }
 
 // runStartCmd handles the start command execution
-func runStartCmd(ctx context.Context, cfg *telegram.Config, debug bool) error {
+func runStartCmd(ctx context.Context, telegramCfg *telegram.Config, derivCfg *deriv.Config, debug bool) error {
 	// Create context that will be canceled on interrupt
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -45,8 +47,20 @@ func runStartCmd(ctx context.Context, cfg *telegram.Config, debug bool) error {
 		cancel()
 	}()
 
-	// Initialize bot
-	bot, err := telegram.NewBot(cfg)
+	// Initialize core bot
+	coreBot, err := core.NewBot(derivCfg, telegramCfg.AllowedUsernames, derivCfg.Symbols)
+	if err != nil {
+		return err
+	}
+
+	// Connect to Deriv API
+	if err := coreBot.Connect(ctx); err != nil {
+		return err
+	}
+	defer coreBot.Close()
+
+	// Initialize telegram bot
+	bot, err := telegram.NewBot(telegramCfg, coreBot)
 	if err != nil {
 		return err
 	}
