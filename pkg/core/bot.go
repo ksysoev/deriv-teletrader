@@ -4,9 +4,15 @@ import (
 	"context"
 )
 
+// BalanceInfo contains balance amount and currency
+type BalanceInfo struct {
+	Amount   float64
+	Currency string
+}
+
 // DerivClient defines the interface for Deriv API operations
 type DerivClient interface {
-	GetBalance(ctx context.Context) (float64, error)
+	GetBalance(ctx context.Context) (*BalanceInfo, error)
 	GetPrice(ctx context.Context, symbol string) (float64, error)
 	PlaceTrade(ctx context.Context, symbol string, amount float64, direction string) error
 	GetPosition(ctx context.Context) (string, error)

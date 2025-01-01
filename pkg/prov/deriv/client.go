@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/kirill/deriv-teletrader/pkg/core"
 	deriv "github.com/ksysoev/deriv-api"
 	"github.com/ksysoev/deriv-api/schema"
 )
@@ -69,27 +70,18 @@ func (c *Client) Close() error {
 }
 
 // GetBalance retrieves account balance
-func (c *Client) GetBalance(ctx context.Context) (float64, error) {
-	var balanceReq struct {
-		Balance   int `json:"balance"`
-		Subscribe int `json:"subscribe"`
-		ReqID     int `json:"req_id"`
-	}
-	balanceReq.Balance = 1
-	balanceReq.Subscribe = 0
-	balanceReq.ReqID = 1
+func (c *Client) GetBalance(ctx context.Context) (*core.BalanceInfo, error) {
+	req := schema.Balance{Balance: 1}
 
-	var balanceResp struct {
-		Balance struct {
-			Balance float64 `json:"balance"`
-		} `json:"balance"`
+	resp, err := c.api.Balance(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}
 
-	if err := c.api.SendRequest(ctx, 1, balanceReq, &balanceResp); err != nil {
-		return 0, fmt.Errorf("failed to get balance: %w", err)
-	}
-
-	return balanceResp.Balance.Balance, nil
+	return &core.BalanceInfo{
+		Amount:   resp.Balance.Balance,
+		Currency: resp.Balance.Currency,
+	}, nil
 }
 
 // GetPrice retrieves current price for a symbol

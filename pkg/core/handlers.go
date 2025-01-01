@@ -51,7 +51,7 @@ func (b *Bot) handleBalance(ctx context.Context, msg *Message) (*Response, error
 		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}
 	return &Response{
-		Text:             fmt.Sprintf("💰 Balance: $%.2f", balance),
+		Text:             fmt.Sprintf("💰 Balance: %.2f %s", balance.Amount, balance.Currency),
 		ReplyToMessageID: msg.MessageID,
 		ChatID:           msg.ChatID,
 	}, nil
