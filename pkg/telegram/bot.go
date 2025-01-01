@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/kirill/deriv-teletrader/pkg/core"
@@ -87,7 +88,38 @@ func (b *Bot) handleUpdate(ctx context.Context, update tgbotapi.Update) error {
 	if msg.IsCommand() {
 		coreMsg.Command = msg.Command()
 		coreMsg.Args = strings.Fields(msg.CommandArguments())
+	} else if msg.Text != "" {
+		// Handle regular messages by putting the text into Args
+		coreMsg.Args = []string{msg.Text}
 	}
+
+	// Send initial typing action immediately
+	typingMsg := tgbotapi.NewChatAction(msg.Chat.ID, tgbotapi.ChatTyping)
+	if _, err := b.api.Send(typingMsg); err != nil {
+		log.Printf("Failed to send initial typing action: %v", err)
+	}
+
+	// Create a context with cancel for the typing goroutine
+	typingCtx, cancelTyping := context.WithCancel(ctx)
+	defer cancelTyping()
+
+	// Start a goroutine to keep sending typing status periodically
+	go func() {
+		ticker := time.NewTicker(4 * time.Second) // Refresh typing status every 4 seconds
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-typingCtx.Done():
+				return
+			case <-ticker.C:
+				typingMsg := tgbotapi.NewChatAction(msg.Chat.ID, tgbotapi.ChatTyping)
+				if _, err := b.api.Send(typingMsg); err != nil {
+					log.Printf("Failed to send typing action: %v", err)
+				}
+			}
+		}
+	}()
 
 	// Process message using message processor
 	response, err := b.processor.ProcessMessage(ctx, coreMsg)

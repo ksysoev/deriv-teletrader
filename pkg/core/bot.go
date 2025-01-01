@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-// LLMClient defines the interface for LLM operations
-type LLMClient interface {
-	ProcessText(ctx context.Context, input string) (string, error)
-}
-
 // BalanceInfo contains balance amount and currency
 type BalanceInfo struct {
 	Amount   float64
@@ -97,12 +92,13 @@ func (b *Bot) ProcessMessage(ctx context.Context, msg *Message) (*Response, erro
 	// If it's not a command (doesn't start with /), process as free-form text
 	if msg.Command == "" {
 		// Join all args as they represent the full message text
-		text := msg.Command
-		if len(msg.Args) > 0 {
-			if text != "" {
-				text += " "
-			}
-			text += strings.Join(msg.Args, " ")
+		text := strings.Join(msg.Args, " ")
+		if text == "" {
+			return &Response{
+				Text:             "❌ Please provide some text for me to process.",
+				ReplyToMessageID: msg.MessageID,
+				ChatID:           msg.ChatID,
+			}, nil
 		}
 
 		// Process text with LLM
