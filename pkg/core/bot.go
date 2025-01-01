@@ -2,9 +2,6 @@ package core
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/kirill/deriv-teletrader/pkg/deriv"
 )
 
 // Message represents a chat message with parsed command and arguments
@@ -25,7 +22,7 @@ type Response struct {
 
 // Bot handles the business logic for processing chat messages
 type Bot struct {
-	derivClient     *deriv.Client
+	derivClient     DerivClient
 	allowedUsers    map[string]struct{}
 	commandHandlers map[string]CommandHandler
 	symbols         []string
@@ -34,12 +31,7 @@ type Bot struct {
 type CommandHandler func(ctx context.Context, msg *Message) (*Response, error)
 
 // NewBot creates a new instance of the bot
-func NewBot(derivCfg *deriv.Config, allowedUsers []string, symbols []string) (*Bot, error) {
-	// Initialize Deriv client
-	derivClient, err := deriv.NewClient(derivCfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Deriv client: %w", err)
-	}
+func NewBot(derivClient DerivClient, allowedUsers []string, symbols []string) (*Bot, error) {
 
 	// Create allowed users map for faster lookup
 	allowedUsersMap := make(map[string]struct{})

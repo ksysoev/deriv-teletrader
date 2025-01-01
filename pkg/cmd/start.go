@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -47,8 +48,14 @@ func runStartCmd(ctx context.Context, telegramCfg *telegram.Config, derivCfg *de
 		cancel()
 	}()
 
+	// Initialize Deriv client
+	derivClient, err := deriv.NewClient(derivCfg)
+	if err != nil {
+		return fmt.Errorf("failed to create Deriv client: %w", err)
+	}
+
 	// Initialize core bot
-	coreBot, err := core.NewBot(derivCfg, telegramCfg.AllowedUsernames, derivCfg.Symbols)
+	coreBot, err := core.NewBot(derivClient, telegramCfg.AllowedUsernames, derivCfg.Symbols)
 	if err != nil {
 		return err
 	}
