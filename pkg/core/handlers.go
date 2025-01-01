@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/kirill/deriv-teletrader/pkg/chart"
 )
 
 // Basic command handlers
@@ -136,6 +138,25 @@ func (b *Bot) handleBuy(ctx context.Context, msg *Message) (*Response, error) {
 		}, nil
 	}
 
+	// Get historical data for the last hour
+	historyReq := HistoricalDataRequest{
+		Symbol:   symbol,
+		Interval: IntervalHour,
+		Style:    StyleCandles,
+		Count:    60, // 1 minute candles for the last hour
+	}
+
+	data, err := b.derivClient.GetHistoricalData(ctx, historyReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get historical data: %w", err)
+	}
+
+	// Generate price chart
+	chartPath, err := chart.GeneratePriceChart(data, symbol)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate chart: %w", err)
+	}
+
 	// Create callback data with trade details
 	callbackBase := fmt.Sprintf("trade:%s:%.2f", symbol, amount)
 
@@ -152,6 +173,7 @@ func (b *Bot) handleBuy(ctx context.Context, msg *Message) (*Response, error) {
 		ReplyToMessageID: msg.MessageID,
 		ChatID:           msg.ChatID,
 		Buttons:          buttons,
+		PhotoPath:        chartPath,
 	}, nil
 }
 

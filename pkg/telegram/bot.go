@@ -154,25 +154,50 @@ func (b *Bot) handleUpdate(ctx context.Context, update tgbotapi.Update) error {
 		return fmt.Errorf("failed to process message: %w", err)
 	}
 
-	// Send response
-	reply := tgbotapi.NewMessage(response.ChatID, response.Text)
-	reply.ReplyToMessageID = response.ReplyToMessageID
+	// Send photo if provided
+	if response.PhotoPath != "" {
+		photo := tgbotapi.NewPhoto(response.ChatID, tgbotapi.FilePath(response.PhotoPath))
+		photo.ReplyToMessageID = response.ReplyToMessageID
 
-	// Add inline keyboard if buttons are provided
-	if len(response.Buttons) > 0 {
-		var keyboard [][]tgbotapi.InlineKeyboardButton
-		for _, row := range response.Buttons {
-			var keyboardRow []tgbotapi.InlineKeyboardButton
-			for _, btn := range row {
-				keyboardRow = append(keyboardRow, tgbotapi.NewInlineKeyboardButtonData(btn.Text, btn.CallbackData))
+		// Add inline keyboard if buttons are provided
+		if len(response.Buttons) > 0 {
+			var keyboard [][]tgbotapi.InlineKeyboardButton
+			for _, row := range response.Buttons {
+				var keyboardRow []tgbotapi.InlineKeyboardButton
+				for _, btn := range row {
+					keyboardRow = append(keyboardRow, tgbotapi.NewInlineKeyboardButtonData(btn.Text, btn.CallbackData))
+				}
+				keyboard = append(keyboard, keyboardRow)
 			}
-			keyboard = append(keyboard, keyboardRow)
+			photo.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
 		}
-		reply.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
-	}
 
-	if _, err := b.api.Send(reply); err != nil {
-		return fmt.Errorf("failed to send reply: %w", err)
+		// Send photo with caption
+		photo.Caption = response.Text
+		if _, err := b.api.Send(photo); err != nil {
+			return fmt.Errorf("failed to send photo: %w", err)
+		}
+	} else {
+		// Send text message
+		reply := tgbotapi.NewMessage(response.ChatID, response.Text)
+		reply.ReplyToMessageID = response.ReplyToMessageID
+
+		// Add inline keyboard if buttons are provided
+		if len(response.Buttons) > 0 {
+			var keyboard [][]tgbotapi.InlineKeyboardButton
+			for _, row := range response.Buttons {
+				var keyboardRow []tgbotapi.InlineKeyboardButton
+				for _, btn := range row {
+					keyboardRow = append(keyboardRow, tgbotapi.NewInlineKeyboardButtonData(btn.Text, btn.CallbackData))
+				}
+				keyboard = append(keyboard, keyboardRow)
+			}
+			reply.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
+		}
+
+		if _, err := b.api.Send(reply); err != nil {
+			return fmt.Errorf("failed to send reply: %w", err)
+		}
 	}
 
 	return nil

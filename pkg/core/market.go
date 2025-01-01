@@ -2,50 +2,35 @@ package core
 
 import (
 	"context"
+
+	"github.com/kirill/deriv-teletrader/pkg/types"
 )
 
 // MarketDataProvider defines the interface for fetching market data from different sources
 type MarketDataProvider interface {
 	// GetHistoricalData retrieves historical market data for a given symbol and time period
-	GetHistoricalData(ctx context.Context, req HistoricalDataRequest) ([]HistoricalDataPoint, error)
+	GetHistoricalData(ctx context.Context, req types.HistoricalDataRequest) ([]types.HistoricalDataPoint, error)
 	// GetPrice retrieves current price for a symbol
 	GetPrice(ctx context.Context, symbol string) (float64, error)
 	// GetAvailableSymbols returns a list of available trading symbols
 	GetAvailableSymbols(ctx context.Context) ([]string, error)
 }
 
-// TimeInterval represents different time intervals for historical data
-type TimeInterval string
-
-const (
-	IntervalHour  TimeInterval = "hour"
-	IntervalDay   TimeInterval = "day"
-	IntervalWeek  TimeInterval = "week"
-	IntervalMonth TimeInterval = "month"
+// Re-export types for backward compatibility
+type (
+	TimeInterval          = types.TimeInterval
+	DataStyle             = types.DataStyle
+	HistoricalDataPoint   = types.HistoricalDataPoint
+	HistoricalDataRequest = types.HistoricalDataRequest
 )
 
-// DataStyle represents the type of market data (ticks or candles)
-type DataStyle string
-
+// Re-export constants for backward compatibility
 const (
-	StyleTicks   DataStyle = "ticks"
-	StyleCandles DataStyle = "candles"
+	IntervalHour  = types.IntervalHour
+	IntervalDay   = types.IntervalDay
+	IntervalWeek  = types.IntervalWeek
+	IntervalMonth = types.IntervalMonth
+
+	StyleTicks   = types.StyleTicks
+	StyleCandles = types.StyleCandles
 )
-
-// HistoricalDataRequest represents parameters for historical data request
-type HistoricalDataRequest struct {
-	Symbol   string
-	Interval TimeInterval // Time interval (hour, day, week, month)
-	Style    DataStyle    // "ticks" or "candles"
-	Count    int          // Number of ticks/candles to return
-}
-
-// HistoricalDataPoint represents a single historical data point
-type HistoricalDataPoint struct {
-	Timestamp int64
-	Price     float64
-	High      float64 // Only available for candles
-	Low       float64 // Only available for candles
-	Open      float64 // Only available for candles
-	Close     float64 // Only available for candles
-}

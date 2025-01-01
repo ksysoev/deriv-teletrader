@@ -66,6 +66,7 @@ type Response struct {
 	ReplyToMessageID int
 	ChatID           int64
 	Buttons          [][]Button // Keyboard buttons in a grid layout
+	PhotoPath        string     // Path to photo file to send
 }
 
 // Bot handles the business logic for processing chat messages
