@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { LineChart, Line, ResponsiveContainer, YAxis, CartesianGrid } from 'recharts';
+import DerivAPIService from './services/deriv-api';
 
 const AppContainer = styled.div`
   background-color: #0e0e0e;
@@ -9,7 +10,7 @@ const AppContainer = styled.div`
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   position: relative;
   overflow-y: auto;
-  padding-bottom: 160px; // Increased space for fixed buttons
+  padding-bottom: 160px;
 `;
 
 const ScrollContainer = styled.div`
@@ -51,7 +52,7 @@ const BalanceIcon = styled.div`
 
 const ChartSection = styled.div`
   padding: 16px;
-  height: 320px; // Increased height
+  height: 320px;
   background-color: #141414;
 `;
 
@@ -173,14 +174,64 @@ const Value = styled.div<{ $trend?: 'up' | 'down' }>`
   color: ${props => props.$trend === 'up' ? '#00a99c' : props.$trend === 'down' ? '#ff444f' : 'white'};
 `;
 
-// Mock data for the chart
-const mockChartData = Array.from({ length: 20 }, (_, i) => ({
-  value: 1000 + Math.sin(i * 0.5) * 200 + Math.random() * 50
-}));
+interface TickData {
+  quote: number;
+  epoch: number;
+}
 
 function App() {
   const [amount, setAmount] = useState('10.00');
   const [multiplier, setMultiplier] = useState('x10');
+  const [chartData, setChartData] = useState<TickData[]>([]);
+  const [currentValue, setCurrentValue] = useState<number>(0);
+  const [trend, setTrend] = useState<'up' | 'down'>('up');
+
+  const handleTick = useCallback((response: any) => {
+    if (!response || !response.tick) {
+      console.error('Invalid tick data:', response);
+      return;
+    }
+
+    const tick = response.tick;
+    const newTick: TickData = {
+      quote: tick.quote,
+      epoch: tick.epoch
+    };
+
+    setChartData(prevData => {
+      const newData = [...prevData, newTick];
+      if (newData.length > 20) {
+        newData.shift();
+      }
+      return newData;
+    });
+
+    setCurrentValue(tick.quote);
+    setTrend(prevTrend => {
+      if (chartData.length > 0) {
+        return tick.quote > chartData[chartData.length - 1].quote ? 'up' : 'down';
+      }
+      return prevTrend;
+    });
+  }, [chartData]);
+
+  useEffect(() => {
+    const derivAPI = DerivAPIService.getInstance();
+
+    const setupSubscription = async () => {
+      try {
+        await derivAPI.subscribeTicks('R_100', handleTick);
+      } catch (error) {
+        console.error('Failed to setup subscription:', error);
+      }
+    };
+
+    setupSubscription();
+
+    return () => {
+      derivAPI.disconnect();
+    };
+  }, [handleTick]);
 
   return (
     <AppContainer>
@@ -203,20 +254,21 @@ function App() {
             </div>
           </ChartHeader>
           <ResponsiveContainer width="100%" height="70%">
-            <LineChart data={mockChartData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e1e1e" opacity={0.3} />
               <YAxis hide={true} domain={['auto', 'auto']} />
               <Line
                 type="monotone"
-                dataKey="value"
+                dataKey="quote"
                 stroke="#00a99c"
                 dot={false}
                 strokeWidth={2}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
-          <Value $trend="up">
-            1452.94 ▲
+          <Value $trend={trend}>
+            {currentValue.toFixed(2)} {trend === 'up' ? '▲' : '▼'}
           </Value>
         </ChartSection>
 
